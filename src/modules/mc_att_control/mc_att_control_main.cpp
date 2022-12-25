@@ -414,12 +414,27 @@ MulticopterAttitudeControl::publish_actuator_controls()
 	// note: _actuators.timestamp_sample is set in MulticopterAttitudeControl::Run()
 	_actuators.timestamp = hrt_absolute_time();
 
+	// ERL Quadrotor States 
+	_erl_quad_states.timestamp = _actuators.timestamp; 
+	_erl_quad_states.controls[0] = _actuators.control[3];
+	_erl_quad_states.controls[1] = _actuators.control[0];
+	_erl_quad_states.controls[2] = _actuators.control[1];
+	_erl_quad_states.controls[3] = _actuators.control[2];
+
 	/* scale effort by battery status */
 	if (_param_mc_bat_scale_en.get() && _battery_status.scale > 0.0f) {
 		for (int i = 0; i < 4; i++) {
 			_actuators.control[i] *= _battery_status.scale;
 		}
 	}
+
+	// ERL Quadrotor States 
+	_erl_quad_states.controls_scaled[0] = _actuators.control[3];
+	_erl_quad_states.controls_scaled[1] = _actuators.control[0];
+	_erl_quad_states.controls_scaled[2] = _actuators.control[1];
+	_erl_quad_states.controls_scaled[3] = _actuators.control[2];
+
+	_erl_quad_states_pub.publish(_erl_quad_states);
 
 	if (!_actuators_0_circuit_breaker_enabled) {
 		orb_publish_auto(_actuators_id, &_actuators_0_pub, &_actuators, nullptr, ORB_PRIO_DEFAULT);
@@ -450,6 +465,23 @@ MulticopterAttitudeControl::Run()
 		const Vector3f rates{angular_velocity.xyz};
 
 		_actuators.timestamp_sample = angular_velocity.timestamp_sample;
+
+		// ERL Quadrotor States 
+		_local_pos_sub.update(&_local_pos); 
+		_erl_quad_states.position[0] = _local_pos.x;
+		_erl_quad_states.position[1] = _local_pos.y;
+		_erl_quad_states.position[2] = _local_pos.z; 
+		_erl_quad_states.orientation[0] = _v_att.q[0];
+		_erl_quad_states.orientation[1] = _v_att.q[1];
+		_erl_quad_states.orientation[2] = _v_att.q[2]; 
+		_erl_quad_states.orientation[3] = _v_att.q[3]; 
+		_erl_quad_states.velocity[0] = _local_pos.vx;
+		_erl_quad_states.velocity[1] = _local_pos.vy;
+		_erl_quad_states.velocity[2] = _local_pos.vz; 
+		_erl_quad_states.angular_velocity[0] = angular_velocity.xyz[0];
+		_erl_quad_states.angular_velocity[1] = angular_velocity.xyz[1];
+		_erl_quad_states.angular_velocity[2] = angular_velocity.xyz[2]; 
+
 
 		/* run the rate controller immediately after a gyro update */
 		if (_v_control_mode.flag_control_rates_enabled) {

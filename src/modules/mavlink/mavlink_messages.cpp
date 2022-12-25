@@ -68,6 +68,7 @@
 #include <uORB/topics/debug_array.h>
 #include <uORB/topics/differential_pressure.h>
 #include <uORB/topics/distance_sensor.h>
+#include <uORB/topics/erl_quad_states.h>
 #include <uORB/topics/estimator_status.h>
 #include <uORB/topics/geofence_result.h>
 #include <uORB/topics/home_position.h>
@@ -4322,6 +4323,83 @@ protected:
 	}
 };
 
+class MavlinkStreamERLQuadStates : public MavlinkStream
+{
+public:
+    const char *get_name() const
+    {
+        return MavlinkStreamERLQuadStates::get_name_static();
+    }
+    static const char *get_name_static()
+    {
+        return "ERL_QUAD_STATES";
+    }
+    static uint16_t get_id_static()
+    {
+        return MAVLINK_MSG_ID_ERL_QUAD_STATES;
+    }
+    uint16_t get_id()
+    {
+        return get_id_static();
+    }
+    static MavlinkStream *new_instance(Mavlink *mavlink)
+    {
+        return new MavlinkStreamERLQuadStates(mavlink);
+    }
+    unsigned get_size()
+    {
+        return MAVLINK_MSG_ID_ERL_QUAD_STATES_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+    }
+
+private:
+    uORB::Subscription _sub{ORB_ID(erl_quad_states)};
+
+    /* do not allow top copying this class */
+    MavlinkStreamERLQuadStates(MavlinkStreamERLQuadStates &);
+    MavlinkStreamERLQuadStates& operator = (const MavlinkStreamERLQuadStates &);
+
+protected:
+    explicit MavlinkStreamERLQuadStates(Mavlink *mavlink) : MavlinkStream(mavlink)
+    {}
+
+    bool send(const hrt_abstime t) override
+    {
+        struct erl_quad_states_s _erl_quad_states;    
+
+        if (_sub.update(&_erl_quad_states)) {
+            mavlink_erl_quad_states_t _msg_erl_quad_states;  
+
+            _msg_erl_quad_states.timestamp = _erl_quad_states.timestamp;
+			_msg_erl_quad_states.position[0] = _erl_quad_states.position[0];
+			_msg_erl_quad_states.position[1] = _erl_quad_states.position[1];
+			_msg_erl_quad_states.position[2] = _erl_quad_states.position[2];
+			_msg_erl_quad_states.orientation[0] = _erl_quad_states.orientation[0];
+			_msg_erl_quad_states.orientation[1] = _erl_quad_states.orientation[1];
+			_msg_erl_quad_states.orientation[2] = _erl_quad_states.orientation[2];
+			_msg_erl_quad_states.orientation[3] = _erl_quad_states.orientation[3];
+			_msg_erl_quad_states.velocity[0] = _erl_quad_states.velocity[0];
+			_msg_erl_quad_states.velocity[1] = _erl_quad_states.velocity[1];
+			_msg_erl_quad_states.velocity[2] = _erl_quad_states.velocity[2];
+			_msg_erl_quad_states.angular_velocity[0] = _erl_quad_states.angular_velocity[0];
+			_msg_erl_quad_states.angular_velocity[1] = _erl_quad_states.angular_velocity[1];
+			_msg_erl_quad_states.angular_velocity[2] = _erl_quad_states.angular_velocity[2];
+            _msg_erl_quad_states.controls[0]  = _erl_quad_states.controls[0];
+			_msg_erl_quad_states.controls[1]  = _erl_quad_states.controls[1];
+			_msg_erl_quad_states.controls[2]  = _erl_quad_states.controls[2];
+			_msg_erl_quad_states.controls[3]  = _erl_quad_states.controls[3];
+			_msg_erl_quad_states.controls_scaled[0]  = _erl_quad_states.controls_scaled[0];
+			_msg_erl_quad_states.controls_scaled[1]  = _erl_quad_states.controls_scaled[1];
+			_msg_erl_quad_states.controls_scaled[2]  = _erl_quad_states.controls_scaled[2];
+			_msg_erl_quad_states.controls_scaled[3]  = _erl_quad_states.controls_scaled[3];
+
+            mavlink_msg_erl_quad_states_send_struct(_mavlink->get_channel(), &_msg_erl_quad_states);
+            
+            return true;
+        }
+        return false;
+    }
+};
+
 class MavlinkStreamExtendedSysState : public MavlinkStream
 {
 public:
@@ -5083,7 +5161,8 @@ static const StreamListItem streams_list[] = {
 	StreamListItem(&MavlinkStreamGroundTruth::new_instance, &MavlinkStreamGroundTruth::get_name_static, &MavlinkStreamGroundTruth::get_id_static),
 	StreamListItem(&MavlinkStreamPing::new_instance, &MavlinkStreamPing::get_name_static, &MavlinkStreamPing::get_id_static),
 	StreamListItem(&MavlinkStreamOrbitStatus::new_instance, &MavlinkStreamOrbitStatus::get_name_static, &MavlinkStreamOrbitStatus::get_id_static),
-	StreamListItem(&MavlinkStreamObstacleDistance::new_instance, &MavlinkStreamObstacleDistance::get_name_static, &MavlinkStreamObstacleDistance::get_id_static)
+	StreamListItem(&MavlinkStreamObstacleDistance::new_instance, &MavlinkStreamObstacleDistance::get_name_static, &MavlinkStreamObstacleDistance::get_id_static),
+	StreamListItem(&MavlinkStreamERLQuadStates::new_instance, &MavlinkStreamERLQuadStates::get_name_static, &MavlinkStreamERLQuadStates::get_id_static)
 };
 
 const char *get_stream_name(const uint16_t msg_id)
