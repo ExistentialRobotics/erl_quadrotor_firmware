@@ -466,6 +466,13 @@ MulticopterAttitudeControl::Run()
 
 		_actuators.timestamp_sample = angular_velocity.timestamp_sample;
 
+
+			// Body-FRD frame to local NED frame Dcm matrix
+			matrix::Dcmf R_body_to_local(matrix::Quatf(_v_att.q));
+
+			// Rotate linear and angular velocity from local NED to body-NED frame
+			matrix::Vector3f linvel_body(R_body_to_local.transpose() * matrix::Vector3f(_local_pos.vx, _local_pos.vy, _local_pos.vz));
+
 		// ERL Quadrotor States 
 		_local_pos_sub.update(&_local_pos); 
 		_erl_quad_states.position[0] = _local_pos.x;
@@ -475,9 +482,9 @@ MulticopterAttitudeControl::Run()
 		_erl_quad_states.orientation[1] = _v_att.q[1];
 		_erl_quad_states.orientation[2] = _v_att.q[2]; 
 		_erl_quad_states.orientation[3] = _v_att.q[3]; 
-		_erl_quad_states.velocity[0] = _local_pos.vx;
-		_erl_quad_states.velocity[1] = _local_pos.vy;
-		_erl_quad_states.velocity[2] = _local_pos.vz; 
+		_erl_quad_states.velocity[0] = linvel_body(0); //_local_pos.vx;
+		_erl_quad_states.velocity[1] = linvel_body(1); //_local_pos.vy;
+		_erl_quad_states.velocity[2] = linvel_body(2); //
 		_erl_quad_states.angular_velocity[0] = angular_velocity.xyz[0];
 		_erl_quad_states.angular_velocity[1] = angular_velocity.xyz[1];
 		_erl_quad_states.angular_velocity[2] = angular_velocity.xyz[2]; 
